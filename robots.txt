@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /*.json$
+
+Sitemap: https://anti-ai-snake-strike.vercel.app/sitemap.xml
+Host: anti-ai-snake-strike.vercel.app
