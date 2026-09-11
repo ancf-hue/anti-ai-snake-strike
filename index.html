@@ -6,6 +6,9 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <title>Змея и Удар — арена силы</title>
 
+    <!-- [FIX] ПРЕДЗАГРУЗКА картинки меню — грузится параллельно с HTML, а не после -->
+    <link rel="preload" as="image" href="udar.webp" fetchpriority="high">
+
     <!-- Мульти-CDN для Three.js с последовательным fallback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>if (typeof THREE === 'undefined') document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');</script>
@@ -15,8 +18,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* [FIX] body теперь имеет цвет-подложку под udar.webp — нет чёрного всполоха */
         body {
-            margin: 0; overflow: hidden; background: #050510;
+            margin: 0; overflow: hidden;
+            background: #1a0f08; /* ← тёмно-коричневый под цвет картинки */
             font-family: 'Inter', sans-serif; color: #fff;
             user-select: none; -webkit-touch-callout: none;
         }
@@ -35,7 +41,18 @@
         .page.active { opacity: 1; pointer-events: all; transform: scale(1); }
         #page-game { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
-        #page-description { background: url('udar.webp') no-repeat center center; background-size: cover; position: relative; }
+        /* [FIX] Меню: цвет-подложка + картинка + !important (не перекрывается базовым .page) */
+        #page-description,
+        #page-description.page {
+            background: #1a0f08 url('udar.webp') no-repeat center center !important;
+            background-size: cover !important;
+            position: relative;
+            animation: fadeInBg 0.35s ease-out;
+        }
+        @keyframes fadeInBg {
+            from { opacity: 0.7; }
+            to   { opacity: 1; }
+        }
         #page-description::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.2); z-index: -1;
@@ -453,7 +470,6 @@
     <script>
         console.log('Скрипт игры "Змея и Удар" загружается...');
 
-        // [FIX] Детект устройств: исключаем touch-ноутбуки, корректно определяем iPad
         const IS_MOBILE_UA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const IS_IPAD = /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
         const IS_LOW_END = (navigator.deviceMemory !== undefined) && (navigator.deviceMemory <= 2);
@@ -655,7 +671,6 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: !LITE_MODE, alpha: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        // [FIX] Тени полностью отключены на слабых устройствах (2 ГБ ОЗУ)
         renderer.shadowMap.enabled = !IS_LOW_END;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.shadowMap.bias = 0.0005;
@@ -679,7 +694,6 @@
         const hemiLight = new THREE.HemisphereLight(0xffcc88, 0x443322, 0.8); scene.add(hemiLight);
         const ambient = new THREE.AmbientLight(0x605040, 0.5); scene.add(ambient);
         const mainLight = new THREE.DirectionalLight(0xffddaa, 1.6); mainLight.position.set(20, 50, 10);
-        // [FIX] Тени только если не отключены на уровне рендерера
         if (!IS_LOW_END) {
             mainLight.castShadow = true;
             const shadowSize = LITE_MODE ? 512 : 2048;
